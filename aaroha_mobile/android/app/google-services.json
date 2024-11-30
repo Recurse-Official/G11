@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "821410252234",
+    "project_id": "aaroha-saf",
+    "storage_bucket": "aaroha-saf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:821410252234:android:11ba78016c43494425fb33",
+        "android_client_info": {
+          "package_name": "com.example.aaroha_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBZ7RmH5mdkRR5RPOT6ALu7F6bvRvLtWjg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
