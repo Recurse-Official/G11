@@ -5,3 +5,4 @@ aaroha_web/macos/Flutter/GeneratedPluginRegistrant.swift
 aaroha_web/windows/flutter/generated_plugin_registrant.cc
 aaroha_web/windows/flutter/generated_plugin_registrant.h
 aaroha_web/windows/flutter/generated_plugins.cmake
+backend/.env
