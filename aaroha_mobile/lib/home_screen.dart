@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'image_categories.dart';
+import 'resultscreen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -77,15 +78,30 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: Colors.blue.shade400,
                     ),
                     onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Message: ${_messageController.text}',
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                          backgroundColor: Colors.blue.shade700,
-                        ),
-                      );
+                        if (_messageController.text.isNotEmpty) {
+    // Navigate to the ResultScreen with current selections
+    Navigator.push(
+      context, 
+      MaterialPageRoute(
+        builder: (context) => ResultScreen(
+          message: _messageController.text,
+          selectedColor: _selectedColor,
+          selectedImage: _selectedImage,
+        ),
+      ),
+    );
+  } else {
+    // Show an error if no message is entered
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Please enter a message',
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.red.shade700,
+      ),
+    );
+  }
                     },
                   ),
                 ),
