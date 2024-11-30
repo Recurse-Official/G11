@@ -5,10 +5,10 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 import os
 import json
-
+from flask_cors import CORS
 # Initialize Flask application
 app = Flask(__name__)
-
+CORS(app)
 # Load environment variables
 load_dotenv()
 
@@ -73,12 +73,27 @@ def extract_message():
         db_data["_id"] = str(inserted_id)
 
         # Return the stored data
-        return jsonify(db_data), 201
+        return jsonify({"message": "Decryption successful", "data": db_data}), 201
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
+# Route to fetch all the hidden messages from MongoDB
+@app.route('/messages', methods=['GET'])
+def get_all_messages():
+    try:
+        # Fetch all the records from the collection
+        messages = list(collection.find())
+
+        # Convert MongoDB _id to string for each document
+        for message in messages:
+            message['_id'] = str(message['_id'])
+
+        return jsonify(messages), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(debug=True, port=7080)

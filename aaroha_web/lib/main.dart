@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'DecryptScreen.dart';
-
+import 'admin_dashboard.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
@@ -35,11 +35,11 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: DecryptScreen(),
+      home: AdminDashboard(),
       onGenerateRoute: (settings) {
         // add
         return MaterialPageRoute(
-          builder: (context) => DecryptScreen(),
+          builder: (context) => AdminDashboard(),
         );
       },
     );
