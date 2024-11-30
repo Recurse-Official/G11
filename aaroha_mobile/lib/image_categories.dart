@@ -10,63 +10,49 @@ class ImageCategory {
       ImageCategory(
         name: 'Cat',
         images: [
-          'https://placekitten.com/200/300',
-          'https://placekitten.com/201/301',
-          'https://placekitten.com/202/302',
-          'https://placekitten.com/203/303',
-          'https://placekitten.com/204/304',
+          'assets/c1.jpg',
+          'assets/c2.jpg',
+          'assets/c3.jpg',
+          'assets/c4.jpg',
         ],
       ),
       ImageCategory(
         name: 'Dog',
         images: [
-          'https://place.dog/300/200',
-          'https://place.dog/300/201',
-          'https://place.dog/300/202',
-          'https://place.dog/300/203',
-          'https://place.dog/300/204',
+          'assets/d1.jpg',
+          'assets/d2.jpg',
+          'assets/d3.jpg',
+          'assets/d4.jpg',
         ],
       ),
       ImageCategory(
         name: 'Horse',
         images: [
-          'https://placehold.co/300x200?text=Horse1',
-          'https://placehold.co/300x200?text=Horse2',
-          'https://placehold.co/300x200?text=Horse3',
-          'https://placehold.co/300x200?text=Horse4',
-          'https://placehold.co/300x200?text=Horse5',
-        ],
-      ),
-      ImageCategory(
-        name: 'Good Morning',
-        images: [
-          'https://placehold.co/300x200?text=GoodMorning1',
-          'https://placehold.co/300x200?text=GoodMorning2',
-          'https://placehold.co/300x200?text=GoodMorning3',
-          'https://placehold.co/300x200?text=GoodMorning4',
-          'https://placehold.co/300x200?text=GoodMorning5',
-        ],
-      ),
-      ImageCategory(
-        name: 'Good Night',
-        images: [
-          'https://placehold.co/300x200?text=GoodNight1',
-          'https://placehold.co/300x200?text=GoodNight2',
-          'https://placehold.co/300x200?text=GoodNight3',
-          'https://placehold.co/300x200?text=GoodNight4',
-          'https://placehold.co/300x200?text=GoodNight5',
+          'assets/h1.jpg',
+          'assets/h2.jpg',
+          'assets/h3.jpg',
+          'assets/h4.jpg',
         ],
       ),
       ImageCategory(
         name: 'Nature',
         images: [
-          'https://placehold.co/300x200?text=Nature1',
-          'https://placehold.co/300x200?text=Nature2',
-          'https://placehold.co/300x200?text=Nature3',
-          'https://placehold.co/300x200?text=Nature4',
-          'https://placehold.co/300x200?text=Nature5',
+          'assets/n1.jpg',
+          'assets/n2.jpg',
+          'assets/n3.jpg',
+          'assets/n4.jpg',
         ],
       ),
+      ImageCategory(
+        name: 'Good Morning',
+        images: [
+          'assets/gm1.jpg',
+          'assets/gm2.jpg',
+          'assets/gm3.jpg',
+          'assets/gm4.jpg',
+        ],
+      ),
+
     ];
   }
 }
