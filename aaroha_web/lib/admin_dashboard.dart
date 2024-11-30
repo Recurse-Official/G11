@@ -20,12 +20,12 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this); // Two tabs: Dashboard and Decrypt
+    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
   void dispose() {
-    _tabController.dispose(); // Dispose the controller when the widget is removed
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -34,20 +34,45 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
     return MaterialApp(
       title: 'Admin Dashboard',
       theme: ThemeData(
-        primarySwatch: Colors.indigo,
+        brightness: Brightness.dark,
+        primarySwatch: Colors.deepPurple,
+        scaffoldBackgroundColor: const Color(0xFF121212),
         appBarTheme: const AppBarTheme(
-          color: Colors.indigo, // Keep top bar consistent with the theme
+          color: Color(0xFF1E1E1E),
           elevation: 4,
         ),
         textTheme: const TextTheme(
-          bodyLarge: TextStyle(color: Colors.black87), // Updated from bodyText2
-          headlineMedium: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 22), // Updated from headline6
+          bodyLarge: TextStyle(color: Colors.white70),
+          headlineMedium: TextStyle(
+            fontWeight: FontWeight.bold, 
+            color: Colors.white, 
+            fontSize: 22
+          ),
         ),
         visualDensity: VisualDensity.adaptivePlatformDensity,
+        cardTheme: CardTheme(
+          color: const Color(0xFF1E1E1E),
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        dataTableTheme: DataTableThemeData(
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E1E1E),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          dataTextStyle: const TextStyle(color: Colors.white70),
+          headingTextStyle: const TextStyle(
+            color: Colors.white, 
+            fontWeight: FontWeight.bold
+          ),
+        ),
       ),
       home: Scaffold(
         appBar: AppBar(
           title: const Text('Admin Dashboard'),
+          backgroundColor: const Color(0xFF1E1E1E),
           bottom: TabBar(
             controller: _tabController,
             tabs: const [
@@ -56,14 +81,14 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
             ],
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
-            indicatorColor: Colors.white,
+            indicatorColor: Colors.deepPurpleAccent,
           ),
         ),
         body: TabBarView(
           controller: _tabController,
           children: const [
-            DataListScreen(), // Dashboard screen
-            DecryptScreen(), // Decrypt screen
+            DataListScreen(),
+            DecryptScreen(),
           ],
         ),
       ),
@@ -111,11 +136,18 @@ class _DataListScreenState extends State<DataListScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Error', style: TextStyle(color: Colors.red)),
-        content: Text(message),
+        backgroundColor: const Color(0xFF2C2C2C),
+        title: Text(
+          'Error', 
+          style: TextStyle(color: Colors.red.shade300)
+        ),
+        content: Text(
+          message, 
+          style: const TextStyle(color: Colors.white70)
+        ),
         actions: <Widget>[
           TextButton(
-            child: const Text('Okay'),
+            child: const Text('Okay', style: TextStyle(color: Colors.deepPurpleAccent)),
             onPressed: () {
               Navigator.of(ctx).pop();
             },
@@ -132,74 +164,101 @@ class _DataListScreenState extends State<DataListScreen> {
     });
   }
 
-  // Build data table with borders and better colors
+  // Build data table with dark theme
   Widget _buildDataTable() {
-    return DataTable(
-      columnSpacing: 16.0,
+    return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
+        color: const Color(0xFF1E1E1E),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.black.withOpacity(0.3),
             spreadRadius: 2,
             blurRadius: 6,
             offset: const Offset(0, 3),
           ),
         ],
       ),
-      columns: const [
-        DataColumn(label: Text('Done')),
-        DataColumn(label: Text('Message')),
-        DataColumn(label: Text('Name')),
-        DataColumn(label: Text('Phone')),
-        DataColumn(label: Text('Urgency')),
-        DataColumn(label: Text('Location')),
-      ],
-      rows: _dataList.asMap().map<int, DataRow>((index, item) {
-        bool isChecked = _checkedItems[index] ?? false;
+      child: DataTable(
+        columnSpacing: 16.0,
+        columns: const [
+          DataColumn(label: Text('Done', style: TextStyle(color: Colors.white))),
+          DataColumn(label: Text('Message', style: TextStyle(color: Colors.white))),
+          DataColumn(label: Text('Name', style: TextStyle(color: Colors.white))),
+          DataColumn(label: Text('Phone', style: TextStyle(color: Colors.white))),
+          DataColumn(label: Text('Urgency', style: TextStyle(color: Colors.white))),
+          DataColumn(label: Text('Location', style: TextStyle(color: Colors.white))),
+        ],
+        rows: _dataList.asMap().map<int, DataRow>((index, item) {
+          bool isChecked = _checkedItems[index] ?? false;
 
-        Color urgencyColor = Colors.white;
-        if (item['urgency_color'] == 'red') {
-          urgencyColor = Colors.red.shade100;
-        } else if (item['urgency_color'] == 'yellow') {
-          urgencyColor = Colors.yellow.shade100;
-        } else if (item['urgency_color'] == 'green') {
-          urgencyColor = Colors.green.shade100;
-        }
+          Color urgencyColor = const Color(0xFF2C2C2C);
+          if (item['urgency_color'] == 'red') {
+            urgencyColor = Colors.red.shade900;
+          } else if (item['urgency_color'] == 'yellow') {
+            urgencyColor = Colors.amber.shade900;
+          } else if (item['urgency_color'] == 'green') {
+            urgencyColor = Colors.green.shade900;
+          } else if (item['urgency_color'] == 'blue') {
+            urgencyColor = Colors.blue.shade900;
+          }
 
-        return MapEntry(
-          index,
-          DataRow(
-            cells: [
-              DataCell(
-                Checkbox(
-                  value: isChecked,
-                  onChanged: (bool? value) {
-                    _toggleCheckbox(index, value);
-                  },
+
+          return MapEntry(
+            index,
+            DataRow(
+              color: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
+                return index.isEven ? const Color(0xFF252525) : null;
+              }),
+
+              cells: [
+                DataCell(
+                  Checkbox(
+                    value: isChecked,
+                    onChanged: (bool? value) {
+                      _toggleCheckbox(index, value);
+                    },
+                    activeColor: Colors.deepPurpleAccent,
+                  ),
                 ),
-              ),
-              DataCell(Text(item['message']?.toString() ?? 'No message')),
-              DataCell(Text(item['name']?.toString() ?? 'Unknown')),
-              DataCell(Text(item['phone']?.toString() ?? 'N/A')),
-              DataCell(
-                Container(
-                  color: urgencyColor, // Apply color to the cell
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(
-                    item['urgency_color']?.toString() ?? 'N/A',
-                    style: TextStyle(
-                      color: urgencyColor == Colors.red.shade100 ? Colors.white : Colors.black,
+                DataCell(Text(
+                  item['message']?.toString() ?? 'No message',
+                  style: const TextStyle(color: Colors.white70),
+                )),
+                DataCell(Text(
+                  item['name']?.toString() ?? 'Unknown',
+                  style: const TextStyle(color: Colors.white70),
+                )),
+                DataCell(Text(
+                  item['phone']?.toString() ?? 'N/A',
+                  style: const TextStyle(color: Colors.white70),
+                )),
+                DataCell(
+                  Container(
+                    color: urgencyColor,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: Text(
+                      item['urgency_color']?.toString() ?? 'N/A',
+                      style: TextStyle(
+                        color: urgencyColor == Colors.red.shade900 ||
+                               urgencyColor == Colors.blue.shade900 
+                            ? Colors.white 
+                            : Colors.white70,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              DataCell(Text(item['location']?.toString() ?? 'N/A')),
-            ],
-          ),
-        );
-      }).values.toList(),
+
+                DataCell(Text(
+                  item['location']?.toString() ?? 'N/A',
+                  style: const TextStyle(color: Colors.white70),
+                )),
+              ],
+            ),
+          );
+        }).values.toList(),
+      ),
     );
   }
 
@@ -212,35 +271,25 @@ class _DataListScreenState extends State<DataListScreen> {
   @override
   Widget build(BuildContext context) {
     return _isLoading
-        ? const Center(child: CircularProgressIndicator())
+        ? const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.deepPurpleAccent),
+            ),
+          )
         : Center(
             child: Padding(
               padding: const EdgeInsets.all(8.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade400, width: 1.5),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.3),
-                      spreadRadius: 2,
-                      blurRadius: 5,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
                 child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.vertical,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: _buildDataTable(),
-                    ),
+                  scrollDirection: Axis.vertical,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: _buildDataTable(),
                   ),
                 ),
               ),
             ),
-          );
-  }
+  );
+}
 }
