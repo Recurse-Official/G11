@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'home_screen.dart'; // Import the HomeScreen
+import 'package:math_expressions/math_expressions.dart'; // Add math_expressions package for evaluating calculations
 
 class CalculatorScreen extends StatefulWidget {
   @override
@@ -8,117 +11,75 @@ class CalculatorScreen extends StatefulWidget {
 class _CalculatorScreenState extends State<CalculatorScreen> {
   String _output = '0';
   String _currentNumber = '';
-  double _firstOperand = 0;
-  String _operator = '';
   String _expression = '';
+  String? _savedPin;
 
-  void _handleNumberInput(String value) {
+  @override
+  void initState() {
+    super.initState();
+    _getSavedPin(); // Fetch saved PIN when the screen is initialized
+  }
+
+  // Function to get the saved PIN from SharedPreferences
+  Future<void> _getSavedPin() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    _savedPin = '4444';
+  }
+
+  // Function to handle the button presses in the calculator
+  void _buttonPressed(String buttonText) {
     setState(() {
-      if (_currentNumber.length < 10) {
-        _currentNumber += value;
+      if (buttonText == "=") {
+        // Evaluate the expression
+        _evaluateExpression();
+      } else if (buttonText == "C") {
+        // Clear the calculator
+        _clearCalculator();
+      } else {
+        // Add numbers or operators to the current expression
+        _currentNumber += buttonText;
         _output = _currentNumber;
-        _updateExpression();
       }
     });
   }
 
-  void _handleOperator(String op) {
-    setState(() {
-      if (_currentNumber.isNotEmpty) {
-        _firstOperand = double.parse(_currentNumber);
-        _operator = op;
-        _currentNumber = '';
-        _updateExpression();
-      }
-    });
-  }
+  // Function to evaluate the current expression
+  // Function to evaluate the current expression
+void _evaluateExpression() {
+  try {
+    // Parse and evaluate the expression
+    Parser parser = Parser();
+    Expression exp = parser.parse(_currentNumber);
+    ContextModel cm = ContextModel();
+    double evalResult = exp.evaluate(EvaluationType.REAL, cm);
 
-  void _calculateResult() {
-    setState(() {
-      if (_currentNumber.isNotEmpty && _operator.isNotEmpty) {
-        double secondOperand = double.parse(_currentNumber);
-        double result;
-        switch (_operator) {
-          case '+':
-            result = _firstOperand + secondOperand;
-            break;
-          case '-':
-            result = _firstOperand - secondOperand;
-            break;
-          case '×':
-            result = _firstOperand * secondOperand;
-            break;
-          case '÷':
-            result = _firstOperand / secondOperand;
-            break;
-          default:
-            return;
-        }
-        _output = result.toString();
-        _expression = '$_firstOperand $_operator $secondOperand = $_output';
-        _currentNumber = _output;
-        _operator = '';
-      }
-    });
-  }
+    // Convert the result to an integer
+    int evalResultInt = evalResult.toInt();
 
-  void _updateExpression() {
-    _expression = _firstOperand != 0 
-      ? '$_firstOperand $_operator ${_currentNumber.isEmpty ? '' : _currentNumber}' 
-      : _currentNumber;
+    // Compare the evaluated result with the saved PIN (as integer)
+    if (_savedPin != null && evalResultInt.toString() == _savedPin) {
+      // If the result matches the PIN, navigate to the HomeScreen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen()),
+      );
+    } else {
+      // Otherwise, display the result normally
+      _output = evalResultInt.toString();
+    }
+  } catch (e) {
+    // Handle any errors in the expression evaluation
+    _output = 'Error';
   }
+  _currentNumber = ''; // Clear the current expression
+}
 
+  // Function to clear the calculator
   void _clearCalculator() {
     setState(() {
       _output = '0';
       _currentNumber = '';
-      _firstOperand = 0;
-      _operator = '';
-      _expression = '';
     });
-  }
-
-  Widget _buildButton(String text, {bool isOperator = false}) {
-    return Expanded(
-      child: Container(
-        margin: const EdgeInsets.all(5),
-        child: ElevatedButton(
-          onPressed: () {
-            switch (text) {
-              case 'C':
-                _clearCalculator();
-                break;
-              case '=':
-                _calculateResult();
-                break;
-              case '+':
-              case '-':
-              case '×':
-              case '÷':
-                _handleOperator(text);
-                break;
-              default:
-                _handleNumberInput(text);
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: isOperator ? Colors.deepOrange : Colors.grey[800],
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
-            ),
-          ),
-          child: Text(
-            text,
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
   @override
@@ -129,87 +90,67 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Expanded(
-              child: Container(
-                alignment: Alignment.bottomRight,
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      _expression,
-                      style: TextStyle(
-                        fontSize: 32,
-                        color: Colors.white70,
-                      ),
-                    ),
-                    Text(
-                      _output,
-                      style: TextStyle(
-                        fontSize: 72,
-                        fontWeight: FontWeight.w300,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            // Calculator output area
+            Text(
+              _output,
+              style: TextStyle(color: Colors.white, fontSize: 48),
             ),
-            Container(
-              height: MediaQuery.of(context).size.height * 0.6,
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.grey[900],
-                borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      _buildButton('7'),
-                      _buildButton('8'),
-                      _buildButton('9'),
-                      _buildButton('÷', isOperator: true),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      _buildButton('4'),
-                      _buildButton('5'),
-                      _buildButton('6'),
-                      _buildButton('×', isOperator: true),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      _buildButton('1'),
-                      _buildButton('2'),
-                      _buildButton('3'),
-                      _buildButton('-', isOperator: true),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      _buildButton('C', isOperator: true),
-                      _buildButton('0'),
-                      _buildButton('.'),
-                      _buildButton('+', isOperator: true),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: _buildButton('=', isOperator: true),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+            Divider(color: Colors.white),
+            // Basic Calculator UI (buttons)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildButton('7'),
+                _buildButton('8'),
+                _buildButton('9'),
+                _buildButton('/'),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildButton('4'),
+                _buildButton('5'),
+                _buildButton('6'),
+                _buildButton('*'),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildButton('1'),
+                _buildButton('2'),
+                _buildButton('3'),
+                _buildButton('-'),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildButton('C'),
+                _buildButton('0'),
+                _buildButton('='),
+                _buildButton('+'),
+              ],
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // Function to create a calculator button
+  Widget _buildButton(String buttonText) {
+    return ElevatedButton(
+      onPressed: () => _buttonPressed(buttonText),
+      child: Text(
+        buttonText,
+        style: TextStyle(fontSize: 24),
+      ),
+      style: ElevatedButton.styleFrom(
+        minimumSize: Size(80, 80),
+        foregroundColor: Colors.grey[850],
+        backgroundColor: Colors.white,
       ),
     );
   }
