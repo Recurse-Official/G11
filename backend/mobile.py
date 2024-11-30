@@ -39,7 +39,7 @@ def get_user_location():
             "city": data.get('city', 'Unknown city'),
             "region": data.get('region', 'Unknown region'),
             "country": data.get('country', 'Unknown country'),
-            "location": data.get('loc', 'Unknown location')  # Latitude, longitude
+            "lat": data.get('loc', 'Unknown location')  # Latitude, longitude
         }
         return location_details
     except Exception as e:
