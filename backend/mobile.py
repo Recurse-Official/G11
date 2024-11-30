@@ -48,8 +48,13 @@ def get_user_location():
 @app.route('/embed', methods=['POST'])
 def embed_message():
     try:
-        # Parse input data from form
-        message = request.form.get('message', 'please help')
+        # Parse input data (from form data)
+        message = request.form.get('message')  # Get the message from form data
+        
+        # Set default message if none is provided
+        if not message:
+            message = 'please help'
+
         name = request.form.get('name')
         phone = request.form.get('phone')
         urgency_color = request.form.get('urgency_color')
@@ -71,6 +76,8 @@ def embed_message():
 
         # Open the image
         image = Image.open(image_file)
+        
+        temp_image_path = None  # To store path of converted image (if any)
 
         # Convert non-PNG images to PNG
         if file_extension != 'png':
@@ -97,6 +104,10 @@ def embed_message():
 
         # Embed the message into the image using crypto_steganography
         crypto_steganography.hide(image, output_path, payload_str)
+        
+        # Cleanup temporary conversion image
+        if temp_image_path:
+            os.remove(temp_image_path)
 
         # Send the image as a response
         return send_file(output_path, mimetype='image/png', as_attachment=True)
@@ -106,4 +117,4 @@ def embed_message():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True,port=5000)
