@@ -11,19 +11,28 @@ class _SignInScreenState extends State<SignInScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _pinController = TextEditingController();
 
-  Future<void> _validateUser() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? savedName = prefs.getString('name');
-    String? savedPin = prefs.getString('userPin');
+ Future<void> _validateUser() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? savedName = prefs.getString('name');
+  String? savedPin = prefs.getString('userPin');
 
-    if (_nameController.text == savedName && _pinController.text == savedPin) {
-      Navigator.pushReplacementNamed(context, '/calculator');
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Invalid name or PIN')),
-      );
-    }
+  if (_nameController.text == savedName && _pinController.text == savedPin) {
+    // Save the PIN to SharedPreferences
+    await prefs.setString('currentPin', savedPin!);
+
+    // Print the saved PIN in the terminal
+    print('Saved PIN: $savedPin');
+
+    // Navigate to the calculator screen
+    Navigator.pushReplacementNamed(context, '/calculator');
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Invalid name or PIN')),
+    );
   }
+}
+
+
 
   @override
   Widget build(BuildContext context) {

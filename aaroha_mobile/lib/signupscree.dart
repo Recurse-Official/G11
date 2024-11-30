@@ -15,13 +15,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Future<void> _saveUserDetails() async {
     if (_formKey.currentState!.validate()) {
       SharedPreferences prefs = await SharedPreferences.getInstance();
+
+      // Save user details to SharedPreferences
       await prefs.setString('name', _nameController.text);
       await prefs.setString('phone', _phoneController.text);
       await prefs.setString('userPin', _pinController.text);
 
+      // Also save the current PIN for immediate use
+      await prefs.setString('currentPin', _pinController.text);
+      
+
+      // Print the saved PIN to the terminal
+      print('Saved PIN: ${_pinController.text}');
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Registration successful!')),
       );
+
+      // Navigate to the calculator screen
       Navigator.pushReplacementNamed(context, '/calculator');
     }
   }
