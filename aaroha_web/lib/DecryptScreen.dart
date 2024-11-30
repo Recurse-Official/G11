@@ -4,10 +4,12 @@ import 'package:image_picker/image_picker.dart';
 // import 'package:cross_file/cross_file.dart';
 
 void main() {
-  runApp(DecryptScreen());
+  runApp(const DecryptScreen());
 }
 
 class DecryptScreen extends StatelessWidget {
+  const DecryptScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -21,12 +23,14 @@ class DecryptScreen extends StatelessWidget {
         scaffoldBackgroundColor: Colors.grey[100],
         fontFamily: 'Roboto',
       ),
-      home: ImageUploadPage(),
+      home: const ImageUploadPage(),
     );
   }
 }
 
 class ImageUploadPage extends StatefulWidget {
+  const ImageUploadPage({super.key});
+
   @override
   _ImageUploadPageState createState() => _ImageUploadPageState();
 }
@@ -58,11 +62,11 @@ Future<void> _pickImageFromGallery() async {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Error', style: TextStyle(color: Colors.red)),
+        title: const Text('Error', style: TextStyle(color: Colors.red)),
         content: Text(message),
         actions: <Widget>[
           TextButton(
-            child: Text('Okay'),
+            child: const Text('Okay'),
             onPressed: () {
               Navigator.of(ctx).pop();
             },
@@ -81,15 +85,15 @@ Future<void> _pickImageFromGallery() async {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Upload Confirmation', style: TextStyle(color: Colors.indigo)),
-        content: Text('Image is ready for decryption. Proceed with upload?'),
+        title: const Text('Upload Confirmation', style: TextStyle(color: Colors.indigo)),
+        content: const Text('Image is ready for decryption. Proceed with upload?'),
         actions: <Widget>[
           TextButton(
-            child: Text('Cancel'),
+            child: const Text('Cancel'),
             onPressed: () => Navigator.of(ctx).pop(),
           ),
           ElevatedButton(
-            child: Text('Confirm Upload'),
+            child: const Text('Confirm Upload'),
             onPressed: () {
               _performImageUpload();
               Navigator.of(ctx).pop();
@@ -106,7 +110,7 @@ Future<void> _pickImageFromGallery() async {
 
     // TODO: Implement secure upload logic
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
+      const SnackBar(
         content: Text('Decrypted.'),
         backgroundColor: Colors.green,
       ),
@@ -117,13 +121,13 @@ Future<void> _pickImageFromGallery() async {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Decryption Screen', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Decryption Screen', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
       body: Center(
         child: Container(
           width: 500,
-          padding: EdgeInsets.all(20),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(10),
@@ -132,7 +136,7 @@ Future<void> _pickImageFromGallery() async {
                 color: Colors.grey.withOpacity(0.3),
                 spreadRadius: 2,
                 blurRadius: 5,
-                offset: Offset(0, 3),
+                offset: const Offset(0, 3),
               ),
             ],
           ),
@@ -160,7 +164,7 @@ Future<void> _pickImageFromGallery() async {
                               size: 80, 
                               color: Colors.indigo[300]
                             ),
-                            SizedBox(height: 10),
+                            const SizedBox(height: 10),
                             Text(
                               'Select Image for Decryption',
                               style: TextStyle(
@@ -173,29 +177,29 @@ Future<void> _pickImageFromGallery() async {
                       ),
               ),
               
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               
               // Gallery Selection Button
               ElevatedButton.icon(
-                icon: Icon(Icons.folder_open),
-                label: Text('Upload image for decryption', style: TextStyle(fontSize: 16)),
+                icon: const Icon(Icons.folder_open),
+                label: const Text('Upload image for decryption', style: TextStyle(fontSize: 16)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.indigo,
-                  padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
                 ),
                 onPressed: _pickImageFromGallery,
               ),
               
-              SizedBox(height: 15),
+              const SizedBox(height: 15),
               
               // Upload Button
               if (_imageBytes != null)
                 ElevatedButton.icon(
-                  icon: Icon(Icons.upload_file),
-                  label: Text('Upload for Analysis', style: TextStyle(fontSize: 16)),
+                  icon: const Icon(Icons.upload_file),
+                  label: const Text('Upload for Analysis', style: TextStyle(fontSize: 16)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green[700],
-                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
                   ),
                   onPressed: _uploadImage,
                 ),
