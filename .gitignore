@@ -1,3 +1,4 @@
+# Aaroha Web
 aaroha_web/linux/flutter/generated_plugin_registrant.cc
 aaroha_web/linux/flutter/generated_plugin_registrant.h
 aaroha_web/linux/flutter/generated_plugins.cmake
@@ -5,5 +6,17 @@ aaroha_web/macos/Flutter/GeneratedPluginRegistrant.swift
 aaroha_web/windows/flutter/generated_plugin_registrant.cc
 aaroha_web/windows/flutter/generated_plugin_registrant.h
 aaroha_web/windows/flutter/generated_plugins.cmake
+
+# Backend
 backend/.env
-backend/venv
+backend/venv/
+
+# Aaroha Mobile
+aaroha_mobile/ios/Podfile
+aaroha_mobile/ios/Flutter/Debug.xcconfig
+aaroha_mobile/ios/Flutter/Release.xcconfig
+aaroha_mobile/macos/Flutter/Flutter-Debug.xcconfig
+aaroha_mobile/macos/Flutter/Flutter-Release.xcconfig
+aaroha_mobile/macos/Podfile
+aaroha_mobile/macos/Flutter/Flutter-Release.xcconfig
+aaroha_mobile/macos/Flutter/Flutter-Debug.xcconfig
