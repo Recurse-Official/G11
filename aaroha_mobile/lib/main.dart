@@ -4,10 +4,9 @@ import 'package:aaroha_mobile/signin_screen.dart';
 import 'package:aaroha_mobile/signup_screen.dart';
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
-import 'calculatorscreen.dart';  // Import the CalculatorScreen
+import 'calculatorscreen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
