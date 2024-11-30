@@ -1,7 +1,8 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-// import 'package:cross_file/cross_file.dart';
+import 'package:http/http.dart' as http;
 
 void main() {
   runApp(const DecryptScreen());
@@ -39,24 +40,25 @@ class _ImageUploadPageState extends State<ImageUploadPage> {
   XFile? _imageFile;
   Uint8List? _imageBytes;
   final ImagePicker _picker = ImagePicker();
+  bool _isUploading = false; // Added to manage upload status
 
-Future<void> _pickImageFromGallery() async {
-  try {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    
-    if (pickedFile != null) {
-      final bytes = await pickedFile.readAsBytes();
-      
-      setState(() {
-        _imageFile = pickedFile;
-        _imageBytes = bytes;
-      });
+  Future<void> _pickImageFromGallery() async {
+    try {
+      final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+
+      if (pickedFile != null) {
+        final bytes = await pickedFile.readAsBytes();
+
+        setState(() {
+          _imageFile = pickedFile;
+          _imageBytes = bytes;
+        });
+      }
+    } catch (e) {
+      print('Error picking image: $e');
+      _showErrorDialog('Failed to select image');
     }
-  } catch (e) {
-    print('Error picking image: $e');
-    _showErrorDialog('Failed to select image');
   }
-}
 
   void _showErrorDialog(String message) {
     showDialog(
@@ -76,46 +78,110 @@ Future<void> _pickImageFromGallery() async {
     );
   }
 
-  void _uploadImage() {
-    if (_imageFile == null) {
-      _showErrorDialog('Please select an image first');
-      return;
+void _showSuccessDialog(Map<String, dynamic> data) {
+  final location = data['location'] ?? {};
+  final city = location is Map ? location['city'] ?? 'N/A' : 'N/A';
+  final region = location is Map ? location['region'] ?? 'N/A' : 'N/A';
+  final country = location is Map ? location['country'] ?? 'N/A' : 'N/A';
+
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Decryption Successful', style: TextStyle(color: Colors.green)),
+      // content: Text(
+      //   'Message: ${data['message'] ?? 'N/A'}\n'
+      //   'Name: ${data['name'] ?? 'N/A'}\n'
+      //   'Phone: ${data['phone'] ?? 'N/A'}\n'
+      //   'Urgency: ${data['urgency_color'] ?? 'N/A'}\n'
+      //   'Location: $city, $region, $country',
+      // ),
+      actions: <Widget>[
+        TextButton(
+          child: const Text('Okay'),
+          onPressed: () {
+            Navigator.of(ctx).pop();
+          },
+        )
+      ],
+    ),
+  );
+}
+
+Future<void> _uploadImage() async {
+  if (_imageFile == null) {
+    _showErrorDialog('Please select an image first');
+    return;
+  }
+
+  setState(() {
+    _isUploading = true;
+  });
+
+  try {
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('http://127.0.0.1:7080/extract'),
+    );
+
+    request.files.add(
+      http.MultipartFile.fromBytes(
+        'image',
+        await _imageFile!.readAsBytes(),
+        filename: _imageFile!.name,
+      ),
+    );
+
+    // Sending the request
+    final response = await request.send();
+
+    // Logging raw response details for debugging
+    print('Response Status Code: ${response.statusCode}');
+    final responseBody = await response.stream.bytesToString();
+    print('Raw Response Body: $responseBody');
+
+    // Handling the response
+    if (response.statusCode == 201) {
+      try {
+        final responseData = jsonDecode(responseBody);
+        print('Parsed Response Data: $responseData');
+
+        setState(() {
+          _isUploading = false;
+        });
+        _showSuccessDialog(responseData);
+      } catch (e) {
+        print('Response Parsing Error: $e');
+        setState(() {
+          _isUploading = false;
+        });
+        _showErrorDialog('Failed to parse the server response.');
+      }
+    } else {
+      try {
+        final errorData = jsonDecode(responseBody);
+        print('Error Response Data: $errorData');
+
+        setState(() {
+          _isUploading = false;
+        });
+        _showErrorDialog(errorData['error'] ?? 'An unknown error occurred.');
+      } catch (e) {
+        print('Error Response Parsing Failed: $e');
+        setState(() {
+          _isUploading = false;
+        });
+        _showErrorDialog('Server returned an unexpected response.');
+      }
     }
-    
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Upload Confirmation', style: TextStyle(color: Colors.indigo)),
-        content: const Text('Image is ready for decryption. Proceed with upload?'),
-        actions: <Widget>[
-          TextButton(
-            child: const Text('Cancel'),
-            onPressed: () => Navigator.of(ctx).pop(),
-          ),
-          ElevatedButton(
-            child: const Text('Confirm Upload'),
-            onPressed: () {
-              _performImageUpload();
-              Navigator.of(ctx).pop();
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo),
-          ),
-        ],
-      ),
-    );
+  } catch (e) {
+    print('Request Sending Error: $e');
+    setState(() {
+      _isUploading = false;
+    });
+    _showErrorDialog('Failed to connect to the backend. Please check your network or server.');
   }
+}
 
-  void _performImageUpload() {
-    if (_imageFile == null) return;
-
-    // TODO: Implement secure upload logic
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Decrypted.'),
-        backgroundColor: Colors.green,
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -160,10 +226,8 @@ Future<void> _pickImageFromGallery() async {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.image_search, 
-                              size: 80, 
-                              color: Colors.indigo[300]
-                            ),
+                            Icon(Icons.image_search,
+                                size: 80, color: Colors.indigo[300]),
                             const SizedBox(height: 10),
                             Text(
                               'Select Image for Decryption',
@@ -176,32 +240,38 @@ Future<void> _pickImageFromGallery() async {
                         ),
                       ),
               ),
-              
+
               const SizedBox(height: 20),
-              
+
               // Gallery Selection Button
               ElevatedButton.icon(
                 icon: const Icon(Icons.folder_open),
-                label: const Text('Upload image for decryption', style: TextStyle(fontSize: 16)),
+                label: const Text('Upload image for decryption',
+                    style: TextStyle(fontSize: 16)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.indigo,
-                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
                 ),
                 onPressed: _pickImageFromGallery,
               ),
-              
+
               const SizedBox(height: 15),
-              
+
               // Upload Button
               if (_imageBytes != null)
                 ElevatedButton.icon(
-                  icon: const Icon(Icons.upload_file),
-                  label: const Text('Upload for Analysis', style: TextStyle(fontSize: 16)),
+                  icon: _isUploading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Icon(Icons.upload_file),
+                  label: const Text('Upload for Analysis',
+                      style: TextStyle(fontSize: 16)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green[700],
-                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
                   ),
-                  onPressed: _uploadImage,
+                  onPressed: _isUploading ? null : _uploadImage,
                 ),
             ],
           ),
