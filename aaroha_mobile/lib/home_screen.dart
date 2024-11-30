@@ -216,44 +216,73 @@ class _HomeScreenState extends State<HomeScreen> {
                                     borderRadius: BorderRadius.circular(15),
                                     child: Stack(
                                       children: [
-                                        Image.network(
-                                          image,
-                                          fit: BoxFit.cover,
-                                          width: double.infinity,
-                                          height: double.infinity,
-                                          loadingBuilder: (context, child, loadingProgress) {
-                                            if (loadingProgress == null) return child;
-                                            return Center(
-                                              child: CircularProgressIndicator(
-                                                valueColor: AlwaysStoppedAnimation<Color>(
-                                                  Colors.blue.shade700
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                          errorBuilder: (context, error, stackTrace) {
-                                            return Center(
-                                              child: Column(
-                                                mainAxisAlignment: MainAxisAlignment.center,
-                                                children: [
-                                                  Icon(
-                                                    Icons.error_outline,
-                                                    color: Colors.red.shade400,
-                                                    size: 40,
-                                                  ),
-                                                  const SizedBox(height: 10),
-                                                  Text(
-                                                    'Failed to load image',
-                                                    style: TextStyle(
-                                                      color: Colors.red.shade300,
-                                                      fontSize: 12,
+                                        image.startsWith('http') || image.startsWith('https') 
+                                          ? Image.network(
+                                              image,
+                                              fit: BoxFit.cover,
+                                              width: double.infinity,
+                                              height: double.infinity,
+                                              loadingBuilder: (context, child, loadingProgress) {
+                                                if (loadingProgress == null) return child;
+                                                return Center(
+                                                  child: CircularProgressIndicator(
+                                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                                      Colors.blue.shade700
                                                     ),
                                                   ),
-                                                ],
-                                              ),
-                                            );
-                                          },
-                                        ),
+                                                );
+                                              },
+                                              errorBuilder: (context, error, stackTrace) {
+                                                return Center(
+                                                  child: Column(
+                                                    mainAxisAlignment: MainAxisAlignment.center,
+                                                    children: [
+                                                      Icon(
+                                                        Icons.error_outline,
+                                                        color: Colors.red.shade400,
+                                                        size: 40,
+                                                      ),
+                                                      const SizedBox(height: 10),
+                                                      Text(
+                                                        'Failed to load image',
+                                                        style: TextStyle(
+                                                          color: Colors.red.shade300,
+                                                          fontSize: 12,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              },
+                                            )
+                                          : Image.asset(
+                                              image,
+                                              fit: BoxFit.cover,
+                                              width: double.infinity,
+                                              height: double.infinity,
+                                              errorBuilder: (context, error, stackTrace) {
+                                                return Center(
+                                                  child: Column(
+                                                    mainAxisAlignment: MainAxisAlignment.center,
+                                                    children: [
+                                                      Icon(
+                                                        Icons.error_outline,
+                                                        color: Colors.red.shade400,
+                                                        size: 40,
+                                                      ),
+                                                      const SizedBox(height: 10),
+                                                      Text(
+                                                        'Failed to load image',
+                                                        style: TextStyle(
+                                                          color: Colors.red.shade300,
+                                                          fontSize: 12,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              },
+                                            ),
                                         if (_selectedImage == image)
                                           Positioned.fill(
                                             child: Container(
