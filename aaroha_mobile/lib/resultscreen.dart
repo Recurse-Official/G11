@@ -1,36 +1,39 @@
-// lib/screens/result_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'dart:convert';
-
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'dart:convert';
+import 'dart:io' show File, Directory, Platform;
 
 class ResultScreen extends StatefulWidget {
   final String message;
   final Color? selectedColor;
   final String? selectedImage;
 
-  const ResultScreen({
-    super.key, 
-    required this.message, 
-    this.selectedColor, 
-    this.selectedImage
-  });
+  const ResultScreen(
+      {Key? key, required this.message, this.selectedColor, this.selectedImage})
+      : super(key: key);
 
   @override
   _ResultScreenState createState() => _ResultScreenState();
 }
 
 class _ResultScreenState extends State<ResultScreen> {
+  // Location and user data variables
   Map<String, dynamic>? locationData;
   Map<String, String> userData = {
     'name': 'Error: Unable to fetch name',
     'phoneNumber': 'Error: Unable to fetch phone number'
   };
+
+  // State management variables
   bool _isLoading = true;
+  String? _uploadResult;
+  bool _isUploading = false;
 
   // Helper method to convert color to readable string
   String _getColorName(Color? color) {
@@ -47,66 +50,60 @@ class _ResultScreenState extends State<ResultScreen> {
     _fetchUserData();
   }
 
-Future<void> _fetchUserData() async {
-  try {
-    // Get the user's phone number from SharedPreferences
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? userPhone = prefs.getString('userPhone');
-    
-    if (userPhone != null) {
-      // Fetch user document from Firestore using phone number
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userPhone)
-          .get();
+  // Fetch user data from Firestore
+  Future<void> _fetchUserData() async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? userPhone = prefs.getString('userPhone');
 
-      // Update state with user data
-      if (userDoc.exists) {
-        setState(() {
-          userData = {
-            'name': userDoc['name'] ?? 'Name not found',
-            'phoneNumber': userPhone
-          };
-          _isLoading = false;
-        });
+      if (userPhone != null) {
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userPhone)
+            .get();
+
+        if (userDoc.exists) {
+          setState(() {
+            userData = {
+              'name': userDoc['name'] ?? 'Name not found',
+              'phoneNumber': userPhone
+            };
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _isLoading = false;
+            userData = {'name': 'User not found', 'phoneNumber': userPhone};
+          });
+        }
       } else {
         setState(() {
           _isLoading = false;
           userData = {
-            'name': 'User not found',
-            'phoneNumber': userPhone
+            'name': 'No user logged in',
+            'phoneNumber': 'No user logged in'
           };
         });
       }
-    } else {
+    } catch (e) {
+      print('Error fetching user data: $e');
       setState(() {
         _isLoading = false;
         userData = {
-          'name': 'No user logged in',
-          'phoneNumber': 'No user logged in'
+          'name': 'Error fetching name',
+          'phoneNumber': 'Error fetching phone number'
         };
       });
     }
-  } catch (e) {
-    print('Error fetching user data: $e');
-    setState(() {
-      _isLoading = false;
-      userData = {
-        'name': 'Error fetching name',
-        'phoneNumber': 'Error fetching phone number'
-      };
-    });
   }
-}
 
+  // Get user location
   Future<void> _getLocation() async {
     bool serviceEnabled;
     LocationPermission permission;
 
-    // Test if location services are enabled.
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      // Location services are not enabled, set default location
       setState(() {
         locationData = {
           'latitude': 'Location services disabled',
@@ -120,7 +117,6 @@ Future<void> _fetchUserData() async {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        // Permissions are denied, set default location
         setState(() {
           locationData = {
             'latitude': 'Location permissions denied',
@@ -130,9 +126,8 @@ Future<void> _fetchUserData() async {
         return;
       }
     }
-    
+
     if (permission == LocationPermission.deniedForever) {
-      // Permissions are permanently denied, set default location
       setState(() {
         locationData = {
           'latitude': 'Location permissions permanently denied',
@@ -140,13 +135,11 @@ Future<void> _fetchUserData() async {
         };
       });
       return;
-    } 
+    }
 
-    // When we reach here, permissions are granted and services are enabled
     try {
       Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.best
-      );
+          desiredAccuracy: LocationAccuracy.best);
 
       setState(() {
         locationData = {
@@ -164,15 +157,138 @@ Future<void> _fetchUserData() async {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // Prepare JSON data
+  // Helper method to create a temporary JSON file with robust error handling
+  Future<File> _createJsonFile(Map<String, dynamic> jsonData) async {
+    try {
+      // Try to get platform-specific temporary directory
+      Directory? tempDir;
+
+      if (Platform.isAndroid || Platform.isIOS) {
+        tempDir = await getTemporaryDirectory();
+      } else {
+        tempDir = Directory.systemTemp;
+      }
+
+      if (tempDir == null) {
+        throw Exception('Could not find temporary directory');
+      }
+
+      final file = File('${tempDir.path}/data.json');
+      await file.writeAsString(JsonEncoder.withIndent('  ').convert(jsonData));
+      return file;
+    } catch (e) {
+      print('Error creating JSON file: $e');
+
+      // Fallback method
+      try {
+        final fallbackFile = File('/tmp/data.json');
+        await fallbackFile
+            .writeAsString(JsonEncoder.withIndent('  ').convert(jsonData));
+        return fallbackFile;
+      } catch (fallbackError) {
+        print('Fallback file creation failed: $fallbackError');
+
+        // If all else fails, use an in-memory file
+        final inMemoryFile = File.fromUri(Uri.file('/data.json'));
+        await inMemoryFile
+            .writeAsString(JsonEncoder.withIndent('  ').convert(jsonData));
+        return inMemoryFile;
+      }
+    }
+  }
+
+  // Upload to Flask server with improved error handling
+Future<void> _uploadToFlaskServer() async {
+  if (_isUploading) return;
+
+  setState(() {
+    _isUploading = true;
+    _uploadResult = null;
+  });
+
+  try {
     final jsonData = {
       'name': userData['name'],
       'phoneNumber': userData['phoneNumber'],
       'message': widget.message,
       'urgency_color': _getColorName(widget.selectedColor),
       'location': locationData ?? {'latitude': 'Loading...', 'longitude': 'Loading...'}
+    };
+
+    var request = http.MultipartRequest('POST', Uri.parse('http://192.168.31.153:5000/embed'));
+
+    var jsonFile = await _createJsonFile(jsonData);
+    request.files.add(await http.MultipartFile.fromPath('json', jsonFile.path));
+
+    if (widget.selectedImage != null) {
+      File imageFile;
+      if (widget.selectedImage!.startsWith('http') || widget.selectedImage!.startsWith('https')) {
+        var response = await http.get(Uri.parse(widget.selectedImage!));
+        var documentDirectory = await getApplicationDocumentsDirectory();
+        imageFile = File('${documentDirectory.path}/temp_image.png');
+        await imageFile.writeAsBytes(response.bodyBytes);
+      } else {
+        var documentDirectory = await getApplicationDocumentsDirectory();
+        imageFile = File('${documentDirectory.path}/temp_image.png');
+        ByteData data = await rootBundle.load(widget.selectedImage!);
+        final buffer = data.buffer;
+        await imageFile.writeAsBytes(buffer.asUint8List(data.offsetInBytes, data.lengthInBytes));
+      }
+
+      if (!await imageFile.exists()) {
+        setState(() {
+          _uploadResult = 'Image file not found';
+          _isUploading = false;
+        });
+        return;
+      }
+
+      request.files.add(await http.MultipartFile.fromPath('image', imageFile.path));
+    }
+
+    var response = await request.send();
+
+    if (response.statusCode == 200) {
+      var documentDirectory = await getApplicationDocumentsDirectory();
+      var filePath = '${documentDirectory.path}/response_image.png';
+      var file = File(filePath);
+      
+      await response.stream.pipe(file.openWrite());
+
+      setState(() {
+        _uploadResult = 'Upload successful. Image saved at $filePath';
+        _isUploading = false;
+      });
+
+      print('Image saved at $filePath');
+    } else {
+      setState(() {
+        _uploadResult = 'Upload failed: ${response.statusCode}';
+        _isUploading = false;
+      });
+      print('Upload failed with status: ${response.statusCode}');
+    }
+  } catch (e) {
+    setState(() {
+      _uploadResult = 'Error: ${e.toString()}';
+      _isUploading = false;
+    });
+    print('Error uploading to Flask server: $e');
+  }
+}
+
+
+
+  @override
+  Widget build(BuildContext context) {
+    // Prepare JSON data for display
+    final jsonData = {
+      'name': userData['name'],
+      'phoneNumber': userData['phoneNumber'],
+      'message': widget.message,
+      'urgency_color': _getColorName(widget.selectedColor),
+      'location':
+          locationData ?? {'latitude': 'Loading...', 'longitude': 'Loading...'}
     };
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -198,12 +314,43 @@ Future<void> _fetchUserData() async {
             ),
           ),
           centerTitle: true,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.upload_file, color: Colors.white),
+              onPressed: _uploadToFlaskServer,
+              tooltip: 'Upload to Server',
+            ),
+          ],
         ),
         body: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Upload Result Display
+              if (_uploadResult != null)
+                Container(
+                  padding: const EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    color: _uploadResult!.contains('successful')
+                        ? Colors.green.withOpacity(0.2)
+                        : Colors.red.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Text(
+                    _uploadResult!,
+                    style: TextStyle(
+                      color: _uploadResult!.contains('successful')
+                          ? Colors.green
+                          : Colors.red,
+                      fontSize: 16,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+
+              const SizedBox(height: 20),
+
               // JSON Display
               Container(
                 padding: const EdgeInsets.all(16.0),
@@ -211,20 +358,21 @@ Future<void> _fetchUserData() async {
                   color: const Color(0xFF1E1E1E),
                   borderRadius: BorderRadius.circular(15),
                 ),
-                child: _isLoading 
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                child: _isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Text(
+                        JsonEncoder.withIndent('  ').convert(jsonData),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 16,
+                          fontFamily: 'monospace',
+                        ),
                       ),
-                    )
-                  : Text(
-                      JsonEncoder.withIndent('  ').convert(jsonData),
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 16,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
               ),
 
               const SizedBox(height: 20),
@@ -245,7 +393,8 @@ Future<void> _fetchUserData() async {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(15),
-                    child: widget.selectedImage!.startsWith('http') || widget.selectedImage!.startsWith('https')
+                    child: widget.selectedImage!.startsWith('http') ||
+                            widget.selectedImage!.startsWith('https')
                         ? Image.network(
                             widget.selectedImage!,
                             fit: BoxFit.cover,
@@ -254,8 +403,7 @@ Future<void> _fetchUserData() async {
                               return Center(
                                 child: CircularProgressIndicator(
                                   valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.blue.shade700
-                                  ),
+                                      Colors.blue.shade700),
                                 ),
                               );
                             },
@@ -308,6 +456,17 @@ Future<void> _fetchUserData() async {
                               );
                             },
                           ),
+                  ),
+                ),
+
+              // Upload Progress Indicator
+              if (_isUploading)
+                const Padding(
+                  padding: EdgeInsets.only(top: 20),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
                   ),
                 ),
             ],
