@@ -99,11 +99,20 @@ class _ImageUploadPageState extends State<ImageUploadPage> {
     );
   }
 
-  void _showSuccessDialog(Map<String, dynamic> data) {
-    final location = data['location'] ?? {};
-    final city = location is Map ? location['city'] ?? 'N/A' : 'N/A';
-    final region = location is Map ? location['region'] ?? 'N/A' : 'N/A';
-    final country = location is Map ? location['country'] ?? 'N/A' : 'N/A';
+void _showSuccessDialog(Map<String, dynamic> responseData) {
+    // Add debugging print statements
+    print('Full Response Data: $responseData');
+    print('Data Key: ${responseData['data']}');
+
+    // Safely access the nested data
+    final data = responseData['data'] ?? {};
+    
+    // Extract name and urgency color with explicit type checking
+    final name = data['name'] is String ? data['name'] : 'N/A';
+    final urgencyColor = data['urgency_color'] is String ? data['urgency_color'] : 'N/A';
+
+    print('Name: $name');
+    print('Urgency Color: $urgencyColor');
 
     showDialog(
       context: context,
@@ -113,9 +122,22 @@ class _ImageUploadPageState extends State<ImageUploadPage> {
           'Decryption Successful', 
           style: TextStyle(color: Colors.green.shade300)
         ),
-        content: Text(
-          'Location: $city, $region, $country',
-          style: const TextStyle(color: Colors.white70),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Name: $name',
+              style: const TextStyle(color: Colors.white70),
+            ),
+            Text(
+              'Urgency Color: $urgencyColor',
+              style: TextStyle(
+                color: Colors.white70,
+                fontWeight: FontWeight.bold
+              ),
+            ),
+          ],
         ),
         actions: <Widget>[
           TextButton(
