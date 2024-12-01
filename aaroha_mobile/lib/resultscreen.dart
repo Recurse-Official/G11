@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
 import 'dart:io' show File, Directory, Platform;
+import 'config.dart';
 
 class ResultScreen extends StatefulWidget {
   final String message;
@@ -274,7 +275,7 @@ class _ResultScreenState extends State<ResultScreen> {
         'location': locationData ?? {'latitude': 'Loading...', 'longitude': 'Loading...'}
       };
 
-      var request = http.MultipartRequest('POST', Uri.parse('http://192.168.31.55:5050/embed'));
+      var request = http.MultipartRequest('POST', Uri.parse('${Config.ipaddress}/embed'));
 
       var jsonFile = await _createJsonFile(jsonData);
       request.files.add(await http.MultipartFile.fromPath('json', jsonFile.path));
