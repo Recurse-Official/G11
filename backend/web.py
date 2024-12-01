@@ -84,7 +84,7 @@ def extract_message():
 def get_all_messages():
     try:
         # Fetch all the records from the collection
-        messages = list(collection.find())
+        messages = list(collection.find().sort("_id", -1))  
 
         # Convert MongoDB _id to string for each document
         for message in messages:
