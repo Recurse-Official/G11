@@ -53,7 +53,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
 
       // Navigate to home screen
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pushReplacementNamed(context, '/calculator');
     } catch (e) {
       // Show error snackbar
       ScaffoldMessenger.of(context).showSnackBar(

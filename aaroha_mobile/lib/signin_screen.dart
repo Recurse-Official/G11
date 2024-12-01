@@ -17,6 +17,23 @@ class _SignInScreenState extends State<SignInScreen> {
   
   bool _isLoading = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _checkPersistentLogin();
+  }
+
+  Future<void> _checkPersistentLogin() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userPhone = prefs.getString('userPhone');
+    String? currentPin = prefs.getString('currentPin');
+
+    if (userPhone != null && currentPin != null) {
+      // Automatically navigate to calculator if user is already logged in
+      Navigator.pushReplacementNamed(context, '/calculator');
+    }
+  }
+
   Future<void> _validateUser() async {
     // Validate form
     if (!_formKey.currentState!.validate()) {
@@ -45,7 +62,7 @@ class _SignInScreenState extends State<SignInScreen> {
           await prefs.setString('currentPin', _pinController.text);
 
           // Navigate to the home screen
-          Navigator.pushReplacementNamed(context, '/home');
+          Navigator.pushReplacementNamed(context, '/calculator');
         } else {
           _showErrorSnackBar('Invalid PIN');
         }
@@ -117,7 +134,7 @@ class _SignInScreenState extends State<SignInScreen> {
                   ),
                   const SizedBox(height: 40),
                   
-                  // Phone Number Field
+                  // Phone Number Field (unchanged)
                   TextFormField(
                     controller: _phoneController,
                     style: const TextStyle(color: Colors.white70),
@@ -152,7 +169,7 @@ class _SignInScreenState extends State<SignInScreen> {
                   ),
                   const SizedBox(height: 16),
                   
-                  // PIN Field
+                  // PIN Field (unchanged)
                   TextFormField(
                     controller: _pinController,
                     style: const TextStyle(color: Colors.white70),
@@ -189,7 +206,7 @@ class _SignInScreenState extends State<SignInScreen> {
                   ),
                   const SizedBox(height: 24),
                   
-                  // Sign In Button
+                  // Sign In Button (unchanged)
                   _isLoading
                       ? Center(
                           child: CircularProgressIndicator(
@@ -218,7 +235,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         ),
                   const SizedBox(height: 16),
                   
-                  // Sign Up Button
+                  // Sign Up Button (unchanged)
                   TextButton(
                     onPressed: () {
                       // Navigate to Sign Up screen

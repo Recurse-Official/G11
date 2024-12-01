@@ -1,8 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class LandingPage extends StatelessWidget {
+class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
+
+  @override
+  _LandingPageState createState() => _LandingPageState();
+}
+
+class _LandingPageState extends State<LandingPage> {
+  @override
+  void initState() {
+    super.initState();
+    _checkPersistentLogin();
+  }
+
+  Future<void> _checkPersistentLogin() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userPhone = prefs.getString('userPhone');
+    String? currentPin = prefs.getString('currentPin');
+
+    // If user is already logged in, immediately navigate to calculator
+    if (userPhone != null && currentPin != null) {
+      Navigator.pushReplacementNamed(context, '/calculator');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,15 +70,15 @@ class LandingPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 40),
                 _buildAuthButton(
-                  context: context, 
-                  text: 'Sign In', 
+                  context: context,
+                  text: 'Sign In',
                   onPressed: () => Navigator.pushNamed(context, '/signin'),
                   color: Colors.blue.shade700,
                 ),
                 const SizedBox(height: 20),
                 _buildAuthButton(
-                  context: context, 
-                  text: 'Sign Up', 
+                  context: context,
+                  text: 'Sign Up',
                   onPressed: () => Navigator.pushNamed(context, '/signup'),
                   color: const Color(0xFF4ECDC4),
                 ),
@@ -68,8 +91,8 @@ class LandingPage extends StatelessWidget {
   }
 
   Widget _buildAuthButton({
-    required BuildContext context, 
-    required String text, 
+    required BuildContext context,
+    required String text,
     required VoidCallback onPressed,
     required Color color,
   }) {
