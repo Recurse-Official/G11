@@ -20,3 +20,4 @@ aaroha_mobile/macos/Flutter/Flutter-Release.xcconfig
 aaroha_mobile/macos/Podfile
 aaroha_mobile/macos/Flutter/Flutter-Release.xcconfig
 aaroha_mobile/macos/Flutter/Flutter-Debug.xcconfig
+config.dart

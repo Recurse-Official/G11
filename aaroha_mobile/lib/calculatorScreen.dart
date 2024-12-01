@@ -4,6 +4,7 @@ import 'package:math_expressions/math_expressions.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'config.dart';
 
 import 'home_screen.dart'; // Import the HomeScreen
 
@@ -138,7 +139,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       };
 
       // Replace with your actual Flask server endpoint
-      final String apiUrl = 'http://192.168.31.153:5050/emergency_pin';
+      final String apiUrl = '${Config.ipaddress}/emergency_pin';
 
       // Send data with emergency PIN
       final response = await http.post(
