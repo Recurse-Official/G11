@@ -34,6 +34,7 @@ class _ResultScreenState extends State<ResultScreen> {
   bool _isLoading = true;
   String? _uploadResult;
   bool _isUploading = false;
+  String? _downloadedImagePath;
 
   // Helper method to convert color to readable string
   String _getColorName(Color? color) {
@@ -94,6 +95,63 @@ class _ResultScreenState extends State<ResultScreen> {
           'phoneNumber': 'Error fetching phone number'
         };
       });
+    }
+  }
+
+  Future<void> _downloadImage() async {
+    if (_downloadedImagePath == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No image available to download'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Get the source file
+      File sourceFile = File(_downloadedImagePath!);
+
+      // Determine download directory based on platform
+      Directory? downloadDirectory;
+      if (Platform.isAndroid) {
+        downloadDirectory = Directory('/storage/emulated/0/Download');
+        if (!await downloadDirectory.exists()) {
+          downloadDirectory = await getExternalStorageDirectory();
+        }
+      } else if (Platform.isIOS) {
+        downloadDirectory = await getApplicationDocumentsDirectory();
+      } else {
+        downloadDirectory = await getDownloadsDirectory();
+      }
+
+      if (downloadDirectory == null) {
+        throw Exception('Could not find download directory');
+      }
+
+      // Create a unique filename
+      String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+      String fileName = 'downloaded_image_$timestamp.png';
+      File destinationFile = File('${downloadDirectory.path}/$fileName');
+
+      // Copy the file
+      await sourceFile.copy(destinationFile.path);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Image downloaded to: ${destinationFile.path}'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      print('Download error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error downloading image: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -174,7 +232,7 @@ class _ResultScreenState extends State<ResultScreen> {
       }
 
       final file = File('${tempDir.path}/data.json');
-      await file.writeAsString(JsonEncoder.withIndent('  ').convert(jsonData));
+      await file.writeAsString(const JsonEncoder.withIndent('  ').convert(jsonData));
       return file;
     } catch (e) {
       print('Error creating JSON file: $e');
@@ -183,7 +241,7 @@ class _ResultScreenState extends State<ResultScreen> {
       try {
         final fallbackFile = File('/tmp/data.json');
         await fallbackFile
-            .writeAsString(JsonEncoder.withIndent('  ').convert(jsonData));
+            .writeAsString(const JsonEncoder.withIndent('  ').convert(jsonData));
         return fallbackFile;
       } catch (fallbackError) {
         print('Fallback file creation failed: $fallbackError');
@@ -191,34 +249,35 @@ class _ResultScreenState extends State<ResultScreen> {
         // If all else fails, use an in-memory file
         final inMemoryFile = File.fromUri(Uri.file('/data.json'));
         await inMemoryFile
-            .writeAsString(JsonEncoder.withIndent('  ').convert(jsonData));
+            .writeAsString(const JsonEncoder.withIndent('  ').convert(jsonData));
         return inMemoryFile;
       }
     }
   }
 
   // Upload to Flask server with improved error handling
-Future<void> _uploadToFlaskServer() async {
-  if (_isUploading) return;
+  Future<void> _uploadToFlaskServer() async {
+    if (_isUploading) return;
 
-  setState(() {
-    _isUploading = true;
-    _uploadResult = null;
-  });
+    setState(() {
+      _isUploading = true;
+      _uploadResult = null;
+      _downloadedImagePath = null;
+    });
 
-  try {
-    final jsonData = {
-      'name': userData['name'],
-      'phoneNumber': userData['phoneNumber'],
-      'message': widget.message,
-      'urgency_color': _getColorName(widget.selectedColor),
-      'location': locationData ?? {'latitude': 'Loading...', 'longitude': 'Loading...'}
-    };
+    try {
+      final jsonData = {
+        'name': userData['name'],
+        'phoneNumber': userData['phoneNumber'],
+        'message': widget.message,
+        'urgency_color': _getColorName(widget.selectedColor),
+        'location': locationData ?? {'latitude': 'Loading...', 'longitude': 'Loading...'}
+      };
 
-    var request = http.MultipartRequest('POST', Uri.parse('http://10.11.49.225:5050/embed'));
+      var request = http.MultipartRequest('POST', Uri.parse('http://192.168.31.55:5050/embed'));
 
-    var jsonFile = await _createJsonFile(jsonData);
-    request.files.add(await http.MultipartFile.fromPath('json', jsonFile.path));
+      var jsonFile = await _createJsonFile(jsonData);
+      request.files.add(await http.MultipartFile.fromPath('json', jsonFile.path));
 
     if (widget.selectedImage != null) {
       File imageFile;
@@ -246,36 +305,37 @@ Future<void> _uploadToFlaskServer() async {
       request.files.add(await http.MultipartFile.fromPath('image', imageFile.path));
     }
 
-    var response = await request.send();
+      var response = await request.send();
 
-    if (response.statusCode == 200) {
-      var documentDirectory = await getApplicationDocumentsDirectory();
-      var filePath = '${documentDirectory.path}/response_image.png';
-      var file = File(filePath);
-      
-      await response.stream.pipe(file.openWrite());
+      if (response.statusCode == 200) {
+        var documentDirectory = await getApplicationDocumentsDirectory();
+        var filePath = '${documentDirectory.path}/response_image_${DateTime.now().millisecondsSinceEpoch}.png';
+        var file = File(filePath);
+        
+        await response.stream.pipe(file.openWrite());
 
+        setState(() {
+          _uploadResult = 'Upload successful. Image saved at $filePath';
+          _downloadedImagePath = filePath;  // Store the path for download
+          _isUploading = false;
+        });
+
+        print('Image saved at $filePath');
+      } else {
+        setState(() {
+          _uploadResult = 'Upload failed: ${response.statusCode}';
+          _isUploading = false;
+        });
+        print('Upload failed with status: ${response.statusCode}');
+      }
+    } catch (e) {
       setState(() {
-        _uploadResult = 'Upload successful. Image saved at $filePath';
+        _uploadResult = 'Error: ${e.toString()}';
         _isUploading = false;
       });
-
-      print('Image saved at $filePath');
-    } else {
-      setState(() {
-        _uploadResult = 'Upload failed: ${response.statusCode}';
-        _isUploading = false;
-      });
-      print('Upload failed with status: ${response.statusCode}');
+      print('Error uploading to Flask server: $e');
     }
-  } catch (e) {
-    setState(() {
-      _uploadResult = 'Error: ${e.toString()}';
-      _isUploading = false;
-    });
-    print('Error uploading to Flask server: $e');
   }
-}
 
 
 
@@ -320,6 +380,13 @@ Future<void> _uploadToFlaskServer() async {
               onPressed: _uploadToFlaskServer,
               tooltip: 'Upload to Server',
             ),
+            // New download button
+            if (_downloadedImagePath != null)
+              IconButton(
+                icon: const Icon(Icons.download, color: Colors.white),
+                onPressed: _downloadImage,
+                tooltip: 'Download Image',
+              ),
           ],
         ),
         body: Padding(
@@ -366,7 +433,7 @@ Future<void> _uploadToFlaskServer() async {
                         ),
                       )
                     : Text(
-                        JsonEncoder.withIndent('  ').convert(jsonData),
+                        const JsonEncoder.withIndent('  ').convert(jsonData),
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 16,
