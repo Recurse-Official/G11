@@ -215,7 +215,7 @@ Future<void> _uploadToFlaskServer() async {
       'location': locationData ?? {'latitude': 'Loading...', 'longitude': 'Loading...'}
     };
 
-    var request = http.MultipartRequest('POST', Uri.parse('http://192.168.31.153:5000/embed'));
+    var request = http.MultipartRequest('POST', Uri.parse('http://10.11.49.225:5050/embed'));
 
     var jsonFile = await _createJsonFile(jsonData);
     request.files.add(await http.MultipartFile.fromPath('json', jsonFile.path));
