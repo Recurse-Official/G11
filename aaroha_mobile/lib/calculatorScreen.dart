@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:math_expressions/math_expressions.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
 import 'home_screen.dart'; // Import the HomeScreen
-import 'package:math_expressions/math_expressions.dart'; // Add math_expressions package for evaluating calculations
 
 class CalculatorScreen extends StatefulWidget {
   @override
@@ -13,6 +17,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   String _currentNumber = '';
   String _expression = '';
   String? _savedPin;
+  final String emergencyPin = '9999'; // Define the emergency PIN
 
   @override
   void initState() {
@@ -21,13 +26,12 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   }
 
   // Function to get the saved PIN from SharedPreferences
- Future<void> _getSavedPin() async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  // Fetch the current PIN stored during sign-in
-  _savedPin = prefs.getString('currentPin');
-  print('Retrieved PIN: $_savedPin'); // Print the fetched PIN for debugging
-}
-
+  Future<void> _getSavedPin() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    // Fetch the current PIN stored during sign-in
+    _savedPin = prefs.getString('currentPin');
+    print('Retrieved PIN: $_savedPin'); // Print the fetched PIN for debugging
+  }
 
   // Function to handle the button presses in the calculator
   void _buttonPressed(String buttonText) {
@@ -47,7 +51,6 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   }
 
   // Function to evaluate the current expression
-  // Function to evaluate the current expression
   void _evaluateExpression() {
     try {
       // Parse and evaluate the expression
@@ -66,6 +69,9 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
           context,
           MaterialPageRoute(builder: (context) => HomeScreen()),
         );
+      } else if (_currentNumber == emergencyPin) {
+        // If the entered PIN matches the emergency PIN, send data to MongoDB
+        _sendDataToMongoDB();
       } else {
         // Otherwise, display the result normally
         _output = evalResultInt.toString();
@@ -83,6 +89,81 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       _output = '0';
       _currentNumber = '';
     });
+  }
+
+  // Function to send emergency data to MongoDB
+  Future<void> _sendDataToMongoDB() async {
+    try {
+      // Fetch user phone from SharedPreferences
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? userPhone = prefs.getString('userPhone');
+
+      // Default location data
+      Map<String, dynamic> locationData = {
+        'latitude': 'Unknown',
+        'longitude': 'Unknown'
+      };
+
+      try {
+        // Attempt to get current location
+        bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (serviceEnabled) {
+          LocationPermission permission = await Geolocator.checkPermission();
+          if (permission == LocationPermission.denied) {
+            permission = await Geolocator.requestPermission();
+          }
+
+          if (permission == LocationPermission.always ||
+              permission == LocationPermission.whileInUse) {
+            Position position = await Geolocator.getCurrentPosition(
+                desiredAccuracy: LocationAccuracy.best);
+            locationData = {
+              'latitude': position.latitude,
+              'longitude': position.longitude
+            };
+          }
+        }
+      } catch (e) {
+        print('Location fetch error: $e');
+        // Keep default location data if fetch fails
+      }
+
+      // Prepare default user data
+      Map<String, dynamic> userData = {
+        'name': userPhone ?? 'Unknown User',
+        'phoneNumber': userPhone ?? 'Unknown Phone',
+        'message': 'Emergency Alert Triggered via Calculator',
+        'urgency_color': 'red',
+        'location': locationData
+      };
+
+      // Replace with your actual Flask server endpoint
+      final String apiUrl = 'http://192.168.31.153:5050/emergency_pin';
+
+      // Send data with emergency PIN
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'pin': emergencyPin, ...userData}),
+      );
+
+      if (response.statusCode == 200) {
+        print('Emergency data sent successfully');
+        setState(() {
+          // _output = 'Emergency alert sent!';
+        });
+      } else {
+         print('Failed to send data: ${response.body}');
+        setState(() {
+          // _output = 'Error sending emergency alert';
+        });
+      }
+    } catch (e) {
+      print('Error sending emergency data: $e');
+      setState(() {
+        // _output = 'Error sending alert';
+      });
+    }
   }
 
   @override
